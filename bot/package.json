@@ -1,0 +1,11 @@
+{
+  "name": "bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.27.1",
+    "@types/node": "^18.11.9"
+  },
+  "scripts": {}
+}

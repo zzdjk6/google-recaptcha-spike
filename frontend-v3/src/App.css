@@ -1,0 +1,8 @@
+.App {
+  margin: 24px auto;
+  width: 600px;
+}
+
+.grecaptcha-badge { 
+  visibility: hidden;
+}
