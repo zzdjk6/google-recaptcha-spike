@@ -1,23 +1,58 @@
 import { test, expect } from "@playwright/test";
 
 test("bot should not be able to register with checkbox recaptcha", async ({
-  page,
+  browser,
 }) => {
-  await page.goto("http://localhost:9875", { waitUntil: "networkidle" });
+  const context = await browser.newContext({ userAgent: "BadUserAgent" });
+  const page = await context.newPage();
+  await page.goto("http://127.0.0.1:9875", { waitUntil: "networkidle" });
 
   const formLocator = page.getByTestId("FormWithCheckbox");
 
-  const recaptchaFrame = await page
-    .frames()
-    .find((frame) => frame.name().startsWith("a-"));
-  await recaptchaFrame!.waitForSelector("div.recaptcha-checkbox-border");
+  const recaptchaFrameLocator = formLocator
+    .frameLocator(`[name^="a-"]`)
+    .first();
+  const recaptchaCheckboxLocator = recaptchaFrameLocator.locator(
+    "div.recaptcha-checkbox-border"
+  );
+  await expect(recaptchaCheckboxLocator).toBeVisible();
   console.log("Captcha appears!");
 
-  await recaptchaFrame?.locator("div.recaptcha-checkbox-border").click();
+  await recaptchaCheckboxLocator.click();
 
-  const challengeFrame = await page
-    .frames()
-    .find((frame) => frame.name().startsWith("c-"));
-  await challengeFrame!.waitForSelector("div.rc-imageselect-challenge");
+  try {
+    const challengeFrameLocator = page.frameLocator(`[name^="c-"]`).first();
+    const challengeLocator = challengeFrameLocator.locator("#rc-imageselect");
+    await expect(challengeLocator).toBeVisible();
+  } catch {
+    const challengeFrameLocator = page.frameLocator(`[name^="c-"]`).last();
+    const challengeLocator = challengeFrameLocator.locator("#rc-imageselect");
+    await expect(challengeLocator).toBeVisible();
+  }
+  console.log("Challenge appears!");
+});
+
+test("bot should not be able to register with invisible recaptcha", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ userAgent: "BadUserAgent" });
+  const page = await context.newPage();
+  await page.goto("http://127.0.0.1:9875", { waitUntil: "networkidle" });
+
+  const formLocator = page.getByTestId("FormWithInvisibleRecaptcha");
+  const registerButtonLocator = formLocator.getByRole("button", {
+    name: "register",
+  });
+  await registerButtonLocator.click();
+
+  try {
+    const challengeFrameLocator = page.frameLocator(`[name^="c-"]`).first();
+    const challengeLocator = challengeFrameLocator.locator("#rc-imageselect");
+    await expect(challengeLocator).toBeVisible();
+  } catch {
+    const challengeFrameLocator = page.frameLocator(`[name^="c-"]`).last();
+    const challengeLocator = challengeFrameLocator.locator("#rc-imageselect");
+    await expect(challengeLocator).toBeVisible();
+  }
   console.log("Challenge appears!");
 });
