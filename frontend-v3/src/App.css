@@ -3,6 +3,13 @@
   width: 600px;
 }
 
-.grecaptcha-badge { 
-  visibility: hidden;
+.Form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.Error {
+  color: red;
 }

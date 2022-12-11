@@ -10,36 +10,6 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
-const verifyWithSecret = (secret: string) => async (req: any, res: any) => {
-  console.log({ body: req.body });
-
-  const token = _.get(req.body, "token");
-  const response = await axios.post(
-    "https://www.google.com/recaptcha/api/siteverify",
-    undefined,
-    {
-      params: {
-        secret,
-        response: token,
-      },
-    }
-  );
-
-  console.log("reCAPTCHA siteverify: ", response.data);
-
-  const success = response.data.success;
-  const challengeTimestamp = response.data.challenge_ts;
-  const hostname = response.data.hostname;
-  const errorCodes = response.data["error-codes"];
-
-  res.json({
-    success,
-    challengeTimestamp,
-    hostname,
-    errorCodes,
-  });
-};
-
 type VerifyRecaptchaTokenArgs = {
   secret: string;
   token: string;
@@ -62,6 +32,13 @@ const verifyRecaptchaToken = async (args: VerifyRecaptchaTokenArgs) => {
 
   if (!response.data.success) {
     throw new Error("reCAPTCHA token is invalid");
+  }
+
+  // Special handling for v3
+  const score = _.toNumber(_.get(response.data, "score"));
+  const action = _.toString(_.get(response.data, "action"));
+  if (action === "register" && score < 0.5) {
+    throw new Error("Bot detected!");
   }
 };
 
@@ -102,10 +79,6 @@ app.post("/api/user/registration", async (req, res) => {
       error: _.get(e, "message") ? _.get(e, "message") : JSON.stringify(e),
     });
   }
-});
-
-app.post("/api/recaptcha/verify/v3", async (req, res) => {
-  await verifyWithSecret("6LcmreIiAAAAACTFMqenXmeoH_VQ2CA4Xitd0d6Q")(req, res);
 });
 
 app.listen(port, () => {

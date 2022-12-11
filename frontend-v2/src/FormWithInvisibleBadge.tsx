@@ -56,7 +56,9 @@ const FormWithInvisibleBadge: React.FC = () => {
 
       <ReCAPTCHA sitekey={SITE_KEY} size="invisible" ref={recaptchaRef} />
 
-      <button onClick={handleClickRegister}>register</button>
+      <button type="button" onClick={handleClickRegister}>
+        register
+      </button>
 
       {errorMessage && <div className="Error">{errorMessage}</div>}
     </div>
