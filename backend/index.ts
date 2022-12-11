@@ -14,12 +14,16 @@ const verifyWithSecret = (secret: string) => async (req: any, res: any) => {
   console.log({ body: req.body });
 
   const token = _.get(req.body, "token");
-  const response = await axios.post("https://www.google.com/recaptcha/api/siteverify", undefined, {
-    params: {
-      secret,
-      response: token,
-    },
-  });
+  const response = await axios.post(
+    "https://www.google.com/recaptcha/api/siteverify",
+    undefined,
+    {
+      params: {
+        secret,
+        response: token,
+      },
+    }
+  );
 
   console.log("reCAPTCHA siteverify: ", response.data);
 
@@ -36,26 +40,29 @@ const verifyWithSecret = (secret: string) => async (req: any, res: any) => {
   });
 };
 
-const verifyRecaptchaToken = async (args: { secret: string; token: string }) => {
+type VerifyRecaptchaTokenArgs = {
+  secret: string;
+  token: string;
+};
+const verifyRecaptchaToken = async (args: VerifyRecaptchaTokenArgs) => {
   const { secret, token } = args;
   if (!token || !secret) {
     throw new Error("reCAPTCHA secret or token is invalid");
   }
 
-  const response = await axios.post("https://www.google.com/recaptcha/api/siteverify", undefined, {
-    params: {
-      secret,
-      response: token,
-    },
-  });
+  const response = await axios.post(
+    "https://www.google.com/recaptcha/api/siteverify",
+    undefined,
+    {
+      params: { secret, response: token },
+    }
+  );
 
   console.log("reCAPTCHA siteverify result: ", response.data);
 
   if (!response.data.success) {
     throw new Error("reCAPTCHA token is invalid");
   }
-
-  return response.data;
 };
 
 const getSecretByRecaptchaVersion = (version: string) => {
@@ -86,10 +93,8 @@ app.post("/api/user/registration", async (req, res) => {
     validateUsername(username);
     const secret = getSecretByRecaptchaVersion(recaptchaVersion);
     await verifyRecaptchaToken({ token, secret });
-    res.status(201).json({
-      result: "SUCCESS",
-      username,
-    });
+    // ... Register ...
+    res.status(201).json({ result: "SUCCESS", username });
   } catch (e) {
     console.error(e);
     res.status(400).json({
@@ -101,14 +106,6 @@ app.post("/api/user/registration", async (req, res) => {
 
 app.post("/api/recaptcha/verify/v3", async (req, res) => {
   await verifyWithSecret("6LcmreIiAAAAACTFMqenXmeoH_VQ2CA4Xitd0d6Q")(req, res);
-});
-
-app.post("/api/recaptcha/verify/v2/checkbox", async (req, res) => {
-  await verifyWithSecret("6LdH6-IiAAAAAB9ENqqRh8TMMwXVG5BTqydTjZoh")(req, res);
-});
-
-app.post("/api/recaptcha/verify/v2/invisible", async (req, res) => {
-  await verifyWithSecret("6LddDOMiAAAAAIQybpd0_XUpvSI6RBn8lDTIsKMg")(req, res);
 });
 
 app.listen(port, () => {

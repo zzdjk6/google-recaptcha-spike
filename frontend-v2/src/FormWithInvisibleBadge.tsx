@@ -3,18 +3,14 @@ import axios from "axios";
 import ReCAPTCHA from "react-google-recaptcha";
 import trim from "lodash/trim";
 
-const SITE_KEY = trim(process.env.REACT_APP_RECAPTCHA_KEY_CHECKBOX);
+const SITE_KEY = trim(process.env.REACT_APP_RECAPTCHA_KEY_INVISIBLE);
 
-const FormWithCheckbox: React.FC = () => {
+const FormWithInvisibleBadge: React.FC = () => {
   const [username, setUsername] = React.useState("");
-  const [recaptchaToken, setRecaptchaToken] = React.useState<string | null>(null);
   const [registrationResult, setRegistrationResult] = React.useState("");
   const [errorMessage, setErrorMessage] = React.useState("");
 
-  const handleRecaptchaChange = React.useCallback((value: string | null) => {
-    console.log("FormWithCheckbox::handleRecaptchaChange > value: ", value);
-    setRecaptchaToken(value);
-  }, []);
+  const recaptchaRef = React.useRef<ReCAPTCHA | null>(null);
 
   const handleUsernameChange = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const value = trim(event.target.value);
@@ -22,21 +18,23 @@ const FormWithCheckbox: React.FC = () => {
   }, []);
 
   const handleClickRegister = React.useCallback(async () => {
-    setErrorMessage("");
-
-    if (!recaptchaToken) {
-      alert("Please click reCAPTCHA checkbox!");
-      return;
+    let recaptchaToken = "";
+    try {
+      recaptchaToken = (await recaptchaRef.current?.executeAsync()) || "";
+      console.log("FormWithInvisibleBadge::handleClickRegister > recaptchaToken: ", recaptchaToken);
+    } catch (e) {
+      console.error(e);
+      alert("Fail to get recaptcha token");
     }
 
     try {
       const response = await axios.post("/api/user/registration", {
         username,
         recaptchaToken,
-        recaptchaVersion: "V2_CHECKBOX",
+        recaptchaVersion: "V2_INVISIBLE",
       });
       const { result } = response.data;
-      console.log("FormWithCheckbox::handleClickRegister > result: ", result);
+      console.log("FormWithInvisibleBadge::handleClickRegister > result: ", result);
       setRegistrationResult(trim(result));
       alert("Register success");
     } catch (e: any) {
@@ -45,10 +43,10 @@ const FormWithCheckbox: React.FC = () => {
       setRegistrationResult(trim(result));
       setErrorMessage(trim(error));
     }
-  }, [recaptchaToken, username]);
+  }, [username]);
 
   return (
-    <form className="Form" data-testid="FormWithCheckbox" data-registration-result={registrationResult}>
+    <div className="Form" data-testid="FormWithInvisibleBadge" data-registration-result={registrationResult}>
       <div>
         <label>
           <span>username: </span>
@@ -56,15 +54,13 @@ const FormWithCheckbox: React.FC = () => {
         </label>
       </div>
 
-      <ReCAPTCHA sitekey={SITE_KEY} onChange={handleRecaptchaChange} />
+      <ReCAPTCHA sitekey={SITE_KEY} size="invisible" ref={recaptchaRef} />
 
-      <button type="button" onClick={handleClickRegister}>
-        register
-      </button>
+      <button onClick={handleClickRegister}>register</button>
 
       {errorMessage && <div className="Error">{errorMessage}</div>}
-    </form>
+    </div>
   );
 };
 
-export default FormWithCheckbox;
+export default FormWithInvisibleBadge;
